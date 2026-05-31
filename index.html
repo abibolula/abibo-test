@@ -1070,36 +1070,141 @@ body:not([data-theme]) .cursor-dot,.cursor-dot{display:block}
 
 /* ── LIGHTBOX ──────────────────────────────────────────────── */
 .lightbox {
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.93);
-  z-index:2000;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-  cursor:zoom-out;
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  cursor: default;
 }
-.lightbox.active{display:flex}
-.lightbox img{max-width:100%;max-height:90vh;border-radius:var(--radius-md);animation:lightboxIn 0.3s ease both;cursor:default}
-@keyframes lightboxIn{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}}
+.lightbox.active { display: flex; }
+
+.lightbox-img-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  max-height: 90vh;
+  user-select: none;
+}
+.lightbox-img-wrap img {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: var(--radius-md);
+  animation: lightboxIn 0.3s ease both;
+  cursor: default;
+  pointer-events: none;
+  display: block;
+}
+@keyframes lightboxIn {
+  from { opacity:0; transform:scale(0.88); }
+  to   { opacity:1; transform:scale(1); }
+}
+
+/* Navigasi panah */
+.lightbox-nav {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  font-size: 24px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition: var(--transition);
+  backdrop-filter: blur(6px);
+  z-index: 2001;
+}
+.lightbox-nav:hover { background: var(--brand-primary); transform: translateY(-50%) scale(1.1); }
+.lightbox-nav.hidden { opacity: 0; pointer-events: none; }
+.lightbox-prev { left: 16px; }
+.lightbox-next { right: 16px; }
+
+/* Tombol tutup */
 .lightbox-close {
-  position:fixed;
-  top:20px;
-  right:20px;
-  width:44px;
-  height:44px;
-  border-radius:50%;
-  background:rgba(255,255,255,0.15);
-  color:#fff;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:20px;
-  transition:var(--transition);
-  backdrop-filter:blur(6px);
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  transition: var(--transition);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+  border: none;
+  z-index: 2001;
 }
-.lightbox-close:hover{background:var(--brand-danger)}
+.lightbox-close:hover { background: var(--brand-danger); }
+
+/* Counter misal "2 / 5" */
+.lightbox-counter {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 18px;
+  border-radius: 100px;
+  backdrop-filter: blur(6px);
+  z-index: 2001;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+.lightbox-counter.hidden { display: none; }
+
+/* Backdrop klik untuk tutup */
+.lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  cursor: zoom-out;
+}
+
+/* Dots di bawah */
+.lightbox-dots {
+  position: fixed;
+  bottom: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 2001;
+  pointer-events: auto;
+}
+.lightbox-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+  cursor: pointer;
+  border: none;
+  transition: var(--transition);
+  padding: 0;
+}
+.lightbox-dot.active {
+  background: #fff;
+  width: 20px;
+  border-radius: 4px;
+}
 
 /* ============================================================
    CART BAR
@@ -1915,10 +2020,17 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border-color);padd
   </div>
 </div>
 
-<!-- LIGHTBOX -->
-<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+<!-- LIGHTBOX — dengan swipe & navigasi galeri -->
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-backdrop" onclick="closeLightbox()"></div>
   <button class="lightbox-close" onclick="closeLightbox()">✕</button>
-  <img id="lightboxImg" src="" alt="Zoom">
+  <button class="lightbox-nav lightbox-prev" id="lbPrev" onclick="lightboxNav(-1)">‹</button>
+  <div class="lightbox-img-wrap">
+    <img id="lightboxImg" src="" alt="Zoom">
+  </div>
+  <button class="lightbox-nav lightbox-next" id="lbNext" onclick="lightboxNav(1)">›</button>
+  <div class="lightbox-counter hidden" id="lightboxCounter"></div>
+  <div class="lightbox-dots" id="lightboxDots"></div>
 </div>
 
 <!-- TOAST CONTAINER -->
@@ -2006,7 +2118,7 @@ const SITE_CONFIG = {
   /* Statistik 3 angka di hero — isi sesuai pencapaian bisnis */
   heroStats: [
     { num: '50+',  label: 'Produk Digital'  },
-//    { num: '200+', label: 'Pelanggan Puas'  },
+    { num: '200+', label: 'Pelanggan Puas'  },
     { num: '4.9★', label: 'Rating Rata-rata' },
   ],
 
@@ -2208,14 +2320,12 @@ const PRODUCTS = [
     imageIds: [
       '157gE0yHJ3kT7bos1VqEkc4fV5TekdkAg',
       '13DhG_nbrlSNZfL584f_KNjLMwlh4eWdu',
-      '157gE0yHJ3kT7bos1VqEkc4fV5TekdkAg',
-      '14aV_BMzo0rT19YQV4ymf81tL_sveiWFw',
     ],
     flyerIds: [
       { id: '14aV_BMzo0rT19YQV4ymf81tL_sveiWFw', label: 'Type 1', price: null, imageIds: ['157gE0yHJ3kT7bos1VqEkc4fV5TekdkAg','13DhG_nbrlSNZfL584f_KNjLMwlh4eWdu'] },
       { id: '14aV_BMzo0rT19YQV4ymf81tL_sveiWFw', label: 'Type 2', price: null, imageIds: ['13DhG_nbrlSNZfL584f_KNjLMwlh4eWdu','157gE0yHJ3kT7bos1VqEkc4fV5TekdkAg'] },
     ],
-    youtubeIds: ['qeIWJkN76e0','qeIWJkN76e0','q__EtjKCnK4'],
+    youtubeIds: ['qeIWJkN76e0','qeIWJkN76e0'],
   },
 
   /* ── TAMBAH PRODUK BARU DI BAWAH INI ───────────────────────
@@ -2279,7 +2389,7 @@ const PRODUCTS = [
     badge2: '🔥 Sale',
     imageIds: ['1nVg_0MAqeFk9b43Vq2TPKfgIZSxBg3Vi','1nVg_0MAqeFk9b43Vq2TPKfgIZSxBg3Vi'],
     flyerIds: [
-      { id: '1nVg_0MAqeFk9b43Vq2TPKfgIZSxBg3Vi', label: 'Type 1', price: null, imageIds: ['1nVg_0MAqeFk9b43Vq2TPKfgIZSxBg3Vi','1EwRyOMaFKjpt4a2n4RrJPwMUOXLHLTQo','1NJLcD8oAgq02IDNjQIbCgwT2MISv59dz','1C7I7X0ERt2hhz9dKp_ZH0Kmgi67GMi5V','17F5oKjuoiPiJvuDhb_3JubLKJxzI7Dsg','1dC22Rkbw-WsCCPGLntILScwNmL0KSdOq','1T4sV__ZDBWktWxvVob4xYijWAU1CBVbi','1ccQvAtYqS6dY7m16p_eHxVuPhCQQu6RC','1fUoikTpJ-ahKdDawiYrwaaT5n0UVXq4D','1k1C4VVd4SY-geDyoqIL1cjmyl5FgxWhq','1dOPu8OPdv9E4Zq2ApJx9y-FbnqN5nCGF','16VqlZGtR9IeMFv1D6BHKq0qXiMSw2XdQ','1khYROp_H5p24ELwZHWlH58DJYLYgueSA','1rqjIb0L59hNy1NaVrQkE5F0lOmPrWkRw','1UAIsmEIeF0evviRnx9mPaj0YM1_H5vyc','1TX3sHPgBBZmmduMG4p3gPE-cBnRQura4','1BrgnzRnpiiB4bRSbeZV2bFR6eMjCD1YR','1m_BZzu7s3Cd7dWzMn_H47PCyST009V-G','1TQI_-gxxG80cumPkxXHSmJJKPfxeuX0G','1vd9BUSh1h-MgKLYOplJbWXflJ_B-7NP_','1qNGv0logYzTAsY7rRXo17wr73JouIBVO','18fuvp9ZyR5Od8sZw2gB7nrs6SbYf-jYz'] },
+      { id: '1nVg_0MAqeFk9b43Vq2TPKfgIZSxBg3Vi', label: 'Type 1', price: null, imageIds: ['1nVg_0MAqeFk9b43Vq2TPKfgIZSxBg3Vi'] },
       { id: '1nVg_0MAqeFk9b43Vq2TPKfgIZSxBg3Vi', label: 'Type 2', price: null, imageIds: ['1nVg_0MAqeFk9b43Vq2TPKfgIZSxBg3Vi'] },
     ],
     youtubeIds: ['qeIWJkN76e0','qeIWJkN76e0'],
@@ -2716,23 +2826,30 @@ function initGalleries() {
     const dotsEl = document.getElementById(`dots-${id}`);
     if (!slidesEl || !dotsEl) return;
     galleryState[id] = { current: 0, total: imageIds.length };
+    const slideImgs = [];
     imageIds.forEach((imgId, idx) => {
       const slide = document.createElement('div');
       slide.className = 'gallery-slide';
       const img = document.createElement('img');
       img.alt = `Foto ${idx+1}`;
-      img.addEventListener('click', () => openLightbox(img.src));
       const skel = document.createElement('div');
       skel.className = 'skeleton-img';
       slide.appendChild(skel);
       slide.appendChild(img);
       slidesEl.appendChild(slide);
-      // Load dengan fallback otomatis
       loadImgWithFallback(img, imgId);
+      slideImgs.push(img);
       const dot = document.createElement('div');
       dot.className = 'gallery-dot'+(idx===0?' active':'');
       dot.addEventListener('click', () => goToSlide(id, idx));
       dotsEl.appendChild(dot);
+    });
+    /* Click pada foto → buka lightbox dengan swipe seluruh galeri */
+    slideImgs.forEach((img, idx) => {
+      img.addEventListener('click', () => {
+        const srcs = slideImgs.map(el => el.src).filter(Boolean);
+        LB.open(srcs, idx);
+      });
     });
     // 3D tilt — desktop only
     if (window.innerWidth >= 768) {
@@ -2775,15 +2892,97 @@ function changeSlide(id, dir) {
 /* ============================================================
    LIGHTBOX
    ============================================================ */
-function openLightbox(src) {
-  document.getElementById('lightboxImg').src = src;
-  document.getElementById('lightbox').classList.add('active');
-  Modal.push('lightbox');
-}
-function closeLightbox() {
-  document.getElementById('lightbox').classList.remove('active');
-  Modal.pop('lightbox');
-}
+/* ============================================================
+   LIGHTBOX — swipe & navigasi galeri
+   ============================================================ */
+const LB = {
+  images: [],      /* array of src strings */
+  index:  0,       /* current index */
+
+  open(images, startIndex = 0) {
+    this.images = Array.isArray(images) ? images.filter(Boolean) : [images];
+    this.index  = Math.max(0, Math.min(startIndex, this.images.length - 1));
+    this._render();
+    document.getElementById('lightbox').classList.add('active');
+    Modal.push('lightbox');
+  },
+
+  _render() {
+    const img     = document.getElementById('lightboxImg');
+    const counter = document.getElementById('lightboxCounter');
+    const prev    = document.getElementById('lbPrev');
+    const next    = document.getElementById('lbNext');
+    const dots    = document.getElementById('lightboxDots');
+    const total   = this.images.length;
+    const i       = this.index;
+
+    /* Gambar dengan fade-in ulang */
+    img.style.opacity = '0';
+    img.onload = () => { img.style.transition = 'opacity 0.25s'; img.style.opacity = '1'; };
+    img.src = this.images[i];
+
+    /* Counter */
+    if (total > 1) {
+      counter.textContent = `${i+1} / ${total}`;
+      counter.classList.remove('hidden');
+    } else {
+      counter.classList.add('hidden');
+    }
+
+    /* Arrows */
+    prev.classList.toggle('hidden', total <= 1);
+    next.classList.toggle('hidden', total <= 1);
+
+    /* Dots — tampilkan maks 8 dots */
+    dots.innerHTML = '';
+    if (total > 1 && total <= 12) {
+      this.images.forEach((_, di) => {
+        const dot = document.createElement('button');
+        dot.className = 'lightbox-dot' + (di === i ? ' active' : '');
+        dot.onclick = (e) => { e.stopPropagation(); this.go(di); };
+        dots.appendChild(dot);
+      });
+    }
+  },
+
+  go(newIndex) {
+    const total = this.images.length;
+    this.index = ((newIndex % total) + total) % total;
+    this._render();
+  },
+
+  close() {
+    document.getElementById('lightbox').classList.remove('active');
+    Modal.pop('lightbox');
+    this.images = [];
+  }
+};
+
+/* Public API agar kode lama tetap jalan */
+function openLightbox(src) { LB.open([src], 0); }
+function closeLightbox()   { LB.close(); }
+
+/* ── Navigasi tombol ── */
+function lightboxNav(dir) { LB.go(LB.index + dir); }
+
+/* ── Keyboard ── */
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('lightbox').classList.contains('active')) return;
+  if (e.key === 'ArrowRight') LB.go(LB.index + 1);
+  if (e.key === 'ArrowLeft')  LB.go(LB.index - 1);
+});
+
+/* ── Touch swipe ── */
+let _lbTouchX = null;
+document.getElementById('lightbox').addEventListener('touchstart', e => {
+  _lbTouchX = e.touches[0].clientX;
+}, { passive: true });
+document.getElementById('lightbox').addEventListener('touchend', e => {
+  if (_lbTouchX === null) return;
+  const diff = e.changedTouches[0].clientX - _lbTouchX;
+  if (Math.abs(diff) > 50) LB.go(LB.index + (diff < 0 ? 1 : -1));
+  _lbTouchX = null;
+}, { passive: true });
 
 /* ============================================================
    SEARCH & FILTER
@@ -3411,13 +3610,24 @@ function openDetail(id) {
       const typeImgs = (f.imageIds && f.imageIds.length > 0) ? f.imageIds : imageIds;
       const galleryEl = document.getElementById(`detail-gallery-${id}-${i}`);
       if (galleryEl) {
+        /* Kumpulkan semua img element untuk bisa di-swipe di lightbox */
+        const imgElements = [];
         typeImgs.forEach((imgId, j) => {
           const img = document.createElement('img');
           img.alt = `Foto ${j+1}`;
-          img.style.cssText = 'height:140px;min-width:200px;object-fit:cover;border-radius:12px;cursor:zoom-in;border:1px solid var(--border-color);flex-shrink:0';
-          img.addEventListener('click', () => openLightbox(img.src));
+          img.style.cssText = 'height:140px;min-width:200px;object-fit:cover;border-radius:12px;cursor:zoom-in;border:1px solid var(--border-color);flex-shrink:0;transition:transform 0.2s';
+          img.addEventListener('mouseenter', () => { img.style.transform = 'scale(1.04)'; });
+          img.addEventListener('mouseleave', () => { img.style.transform = ''; });
           galleryEl.appendChild(img);
+          imgElements.push(img);
           loadImgWithFallback(img, imgId);
+        });
+        /* Set click setelah semua img dibuat — pass array src saat diklik */
+        imgElements.forEach((img, j) => {
+          img.addEventListener('click', () => {
+            const srcs = imgElements.map(el => el.src).filter(Boolean);
+            LB.open(srcs, j);
+          });
         });
       }
       const flyerImg = document.getElementById(`detail-flyer-img-${id}-${i}`);
@@ -3431,22 +3641,31 @@ function openDetail(id) {
   } else {
     const galleryEl = document.getElementById(`detail-gallery-${id}-main`);
     if (galleryEl) {
+      const imgElements = [];
       imageIds.forEach((imgId, j) => {
         const img = document.createElement('img');
         img.alt = `Foto ${j+1}`;
-        img.style.cssText = 'height:140px;min-width:200px;object-fit:cover;border-radius:12px;cursor:zoom-in;border:1px solid var(--border-color);flex-shrink:0';
-        img.addEventListener('click', () => openLightbox(img.src));
+        img.style.cssText = 'height:140px;min-width:200px;object-fit:cover;border-radius:12px;cursor:zoom-in;border:1px solid var(--border-color);flex-shrink:0;transition:transform 0.2s';
+        img.addEventListener('mouseenter', () => { img.style.transform = 'scale(1.04)'; });
+        img.addEventListener('mouseleave', () => { img.style.transform = ''; });
         galleryEl.appendChild(img);
+        imgElements.push(img);
         loadImgWithFallback(img, imgId);
+      });
+      imgElements.forEach((img, j) => {
+        img.addEventListener('click', () => {
+          const srcs = imgElements.map(el => el.src).filter(Boolean);
+          LB.open(srcs, j);
+        });
       });
     }
   }
 }
 
-/* Zoom flyer di detail */
+/* Zoom flyer di detail — buka lightbox dengan satu gambar */
 function zoomDetailFlyer(imgId) {
   const img = document.getElementById(imgId);
-  if (img && img.src) openLightbox(img.src);
+  if (img && img.src) LB.open([img.src], 0);
 }
 
 /* Track type aktif per produk saat detail terbuka */
